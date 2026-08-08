@@ -49,23 +49,26 @@ description: 用于软件项目文档治理。当用户要求创建、更新、�
 - 不写入真实密钥、Token、个人敏感数据或完整生产日志。
 - 未经明确授权，不删除、归档、重命名或批量重组文档，不安装、发布或修改外部资源。
 - 不把未执行的测试或检查描述为已通过。
-- 文档内容必须具体、可验证。禁止以下三类反模式：(1) 过于概括的管理式陈述——"功能行为符合 Spec"必须改为可逐条执行的检查步骤，"严格执行非目标"必须给出可执行的动作；(2) 缺少具体值的软约束——"有限次数"必须给出数字，"负责某模块"必须指向文件路径或函数名；(3) 脱离业务的概念列表——每个概念必须说清"包含什么内容"和"与相邻概念的区别"。创建、更新或审核文档时，发现"看起来有道理但不知道怎么做"的描述即视为不通过。
+- 不得为了满足模板或“具体、可验证”的要求而虚构信息。缺少可靠依据时，不编造数值、日期、负责人、文件路径、接口、状态或验证结果；标记为“待确认”“未提供”或“未验证”，并区分已确认事实、建议方案和待定项。
+- 文档内容必须具体、可验证，并能明确指导操作或判断。创建、更新或审核文档时，发现“看起来有道理但不知道怎么做”的描述即视为不通过；详细反模式见 `references/governance-principles.md`。
 
 ## Reference 使用条件
 
-按任务读取 `references/document-management.md` 的相关章节：
+按任务读取对应 reference：
 
-| 任务 | 读取章节 |
+| 任务 | 读取文件 |
 | --- | --- |
-| 设计文档目录或判断文档类型 | §3–4 |
-| 命名、编号或状态流转 | §5–6 |
-| 功能 Spec 生命周期或代码配套更新 | §7–8 |
-| 文档与代码冲突、替代或归档 | §9–10 |
-| AI Agent 文档协作 | §11 |
-| 文档评审 | §12 |
-| 文档治理、维护节奏或新项目落地 | §14–16 |
+| 理解治理原则或单一有效来源 | `references/governance-principles.md` |
+| 设计文档目录、判断文档类型或职责边界 | `references/structure-and-types.md` |
+| 命名、编号、元信息或状态流转 | `references/naming-and-status.md` |
+| 功能 Spec 生命周期或代码配套更新 | `references/lifecycle-and-conflicts.md` |
+| 判断信息来源，或处理文档与代码冲突、替代、归档或删除 | `references/lifecycle-and-conflicts.md` |
+| AI Agent 文档协作或文档评审 | `references/review-and-maintenance.md` |
+| 维护节奏 | `references/review-and-maintenance.md` |
+| 建立完整文档体系或为新项目落地 | `references/governance-principles.md`、`references/structure-and-types.md`、`references/review-and-maintenance.md` |
+| 全面审核文档体系 | 按审核范围读取上述文件；覆盖全部治理规则时读取全部 5 份 reference |
 
-只有在用户要求建立、全面审核文档体系，或任务同时跨越多个文档类型时，才读取完整 reference。
+只读取与当前任务直接相关的文件。只有在用户要求建立、全面审核文档体系，或任务同时跨越多个文档类型时，才读取多份 reference；不要默认全部读取。
 
 ## Assets 使用条件
 
