@@ -1,0 +1,7 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# npx skills local state
+.skill-lock.json
