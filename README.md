@@ -8,7 +8,7 @@
 
 | 技能 | 说明 | 安装项目 |
 | ---- | ---- | -------- |
-| `code-style` | 个人代码风格与可读性约定 | ai-steward-a, template-desktop |
+| `code-style` | 代码怎么写、注释怎么注，风格统一 | ai-steward-a, template-desktop |
 | `write-git-commit-message` | 生成/改写/校验 Git 提交信息 | ai-steward-a, template-desktop |
 | `document-management` | 软件项目文档治理 | template-desktop |
 
