@@ -1,0 +1,42 @@
+description: 项目设计（这个项目是干嘛的、为什么这么设计）
+vars:
+  request: 我完全不了解这个项目，用大白话给我讲讲它是干什么的、整体是怎么设计的、为什么要这么设计。
+  code: |
+    项目名：ai-steward（私人日程 AI 助手）
+
+    一句话介绍：用自然语言记录作息、锻炼、三餐和习惯；AI 只生成受限的结构化提案，
+    用户核对差异并明确确认后，Gateway 才安全写入日程数据。
+
+    模块组成：
+    - apps/web：Vite + React + TypeScript 单页应用（月历 / 录入 / 记忆三个 Tab），只调用 Gateway API。
+    - apps/gateway：Node HTTP 服务，内含三个业务域：
+      - schedule：日程数据的读写、冲突检测与失败恢复
+      - proposals：AI 提案的解析、校验与确认流程
+      - memory：长期记忆（稳定偏好与约束），SQLite 存储
+    - apps/memory：SQLite + AI 长期记忆服务（独立辅助服务）。
+    - data/：本地 SQLite 数据文件（schedule.db、memory.db）。
+    - docs/：产品、架构、Spec、决策记录（ADR）、运维和进度文档。
+    - test/：跨包一致性与集成测试。
+
+    核心设计约束（摘自项目 README 与工作指南）：
+    - Gateway 是唯一在线日程读写入口；Web 和 AI 都不得直接读写日程数据库。
+    - AI 不读取文件、不接触路径、不执行工具，也不直接写入日程数据。
+    - 确认前不写入；提交时执行冲突检测、完整校验和失败恢复。
+    - 提案确认只能使用 URL 中的 proposal_id；客户端不得提交 operations 或文件路径。
+    - Memory 是独立辅助服务；不可用时 Gateway 日程核心流程继续工作。
+    - .ts 源码由 Node 22 直接运行（type stripping，无构建步骤）。
+
+    架构图（摘自 README）：
+    Web（React SPA） ──>
+                        ├─> Gateway ─> data/schedule/schedule.db
+                        │       │
+                        │       ├─> AI provider
+                        │       └─> Memory ─> data/memory/memory.db
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 先用一句话或日常类比让零基础读者明白这个项目给谁解决什么问题（事理先行），再展开讲模块划分；Gateway、提案、SPA 这类术语首次出现时有一句话解释
+  - type: llm-rubric
+    value: 讲清了"AI 只生成提案、用户确认后 Gateway 才写入"这条安全主线为什么必要（防止 AI 误写真实数据），以及"Memory 挂了核心流程也能用"这个设计取舍的好处
+  - type: llm-rubric
+    value: 模块职责用表格或列表组织，读者能把"模块名 → 负责什么"一一对上，没有大段文字堆砌

@@ -1,0 +1,24 @@
+description: 过度抽象陷阱（规则5，反向题）
+vars:
+  request: 这两个文件里的日期格式化函数长得几乎一样，要不要抽到公共包里统一？请按我的个人风格判断并处理。
+  code: |
+    // 文件：report.ts —— 全仓库仅此一处调用
+    function formatDateForReport(d: Date): string {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // 文件：invoice.ts —— 也仅此一处调用
+    function formatDateForInvoice(d: Date): string {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+assert:
+  - type: llm-rubric
+    value: 结论是不立即抽取到公共包（或明确说等第三处需求出现、模式稳定后再抽），理由落在"各自只有一个消费方、尚无稳定边界"上
+  - type: llm-rubric
+    value: 明确表示暂时保留少量重复是允许的；没有建议创建共享模块、公共工具包或基类来消除这处重复

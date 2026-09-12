@@ -54,4 +54,19 @@ npx promptfoo@latest eval -c promptfooconfig.project-reading.yaml --env-file .en
 - 提示词文件里不能出现 `---` 分隔线（会被工具误切成两段）——已全部换掉。
 - 之前"跑 28 分钟"的慢主要是思考模式；修完后全量约 5 分钟。
 
+## 补记（写备忘录之后又发生的事）
+
+你睡着后又测了一个东西：**仓库里的 code-style 技能**。结论：技能有效，但发现主文件单用不够（细则是刚需）、细则全文又会用力过猛（简单分支也上注册表）。完整的测试报告在 `reports/code-style-report.md`，原始数据可以用 `npx promptfoo@latest view` 翻（本地网页）。这些文件也还没提交 git。
+
+## 补记二：评测系统化改造完成
+
+睡醒后我把评测台升级成了完整系统（目录 core/evals/results/reports + history.jsonl 台账）：
+
+- **跑测评**：`npm run eval`（全部）或 `npm run eval -- code-reading`（单个）
+- **看结果**：`npm run dashboard` 打开 http://localhost:15600，或双击 `reports/dashboard.html`
+- **加测评**：`npm run new -- 名字` 建骨架，填 prompts/ 和 cases/ 即可
+- 使用说明在 `prompt-evaluation/README.md`，踩坑备忘在 `core/README.md`
+
+顺带修了一个历史 bug：commit-message 示例的提示词一直缺材料占位符（变量从没送到模型手里），修复后 6/6 全过。EVALUATIONS.md 已退役，内容拆进了 history.jsonl（台账）和各测评的 README（结论）。
+
 晚安，好梦。

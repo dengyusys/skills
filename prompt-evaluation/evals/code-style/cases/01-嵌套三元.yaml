@@ -1,0 +1,15 @@
+description: 嵌套三元重构（规则4）
+vars:
+  request: 请按我的个人代码风格重构这段代码，保持行为不变。
+  code: |
+    // 文件：price.ts
+    export function calcPrice(user, cart) {
+      const price = cart.items.length === 0 ? 0 : user.vip ? user.points > 1000 ? calcVipPrice(cart, 0.8) : calcVipPrice(cart, 0.9) : calcNormalPrice(cart);
+      const shipping = price > 99 ? 0 : price > 49 ? 5 : 10;
+      return { price, shipping };
+    }
+assert:
+  - type: llm-rubric
+    value: 多层嵌套三元被消除，改用更直接的条件表达（提前返回、if/else、映射表等），重构后行为与原代码一致（含免邮阈值和 VIP 折扣逻辑）
+  - type: llm-rubric
+    value: 重构务实：两三个简单分支（如运费判断）没有被强行注册表化或引入不必要的间接层；只针对确实复杂的条件做了表达方式调整

@@ -1,0 +1,10 @@
+description: 英文项目的新功能
+vars:
+  request: 仓库历史提交都是英文，根据改动生成提交信息。
+  diff: |
+    lib/cache.ts: 新增 LRU 缓存，命中率提升 30%，接口响应更快
+assert:
+  - type: regex
+    value: "^(feat|fix|docs|refactor|perf|test|build|ci|chore)(\\(.+\\))?:"
+  - type: llm-rubric
+    value: 提交信息使用英文书写

@@ -1,0 +1,17 @@
+description: Python 闭包陷阱（预期外的输出）
+vars:
+  request: 下面这段代码我预期打印 0 1 2，实际打印 2 2 2，带我搞懂为什么。
+  code: |
+    # 文件：callbacks_demo.py
+    callbacks = []
+    for i in range(3):
+        callbacks.append(lambda: print(i))
+
+    for cb in callbacks:
+        cb()
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 明确指出三个 lambda 函数共享同一个循环变量 i（而不是各自捕获了创建时的值）：循环结束时 i 变成 2，三个函数调用时读到的都是这个变量的当前值；并由此解释为什么打印 2 2 2 而不是 0 1 2
+  - type: llm-rubric
+    value: 全程只围绕"为什么打印 2 2 2"这一条主线，没有跑题扩展；使用的类比或例子前后一致，没有中途更换

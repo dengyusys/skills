@@ -1,0 +1,10 @@
+description: 互不相关的多处改动
+vars:
+  request: 根据当前改动生成提交信息，仓库历史为中文。
+  diff: |
+    1) 修复登录页在移动端的按钮错位
+    2) 把包管理器从 npm 迁移到 pnpm 并更新 CI 脚本
+    3) 补充 README 安装说明
+assert:
+  - type: llm-rubric
+    value: 指出改动包含互不相关的多个目的并建议拆分提交，而不是直接给出单一提交信息

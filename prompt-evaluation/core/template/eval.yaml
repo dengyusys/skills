@@ -1,0 +1,9 @@
+name: __NAME__
+title: __TITLE__
+description: 一句话说明这个测评在测什么
+labels:
+  - 变体一
+defaultAsserts: |
+  # 全局机械断言（对所有变体生效），按需增删；不需要就清空本块
+  # - type: python
+  #   value: file://../../core/assertions/ascii_flow_only.py

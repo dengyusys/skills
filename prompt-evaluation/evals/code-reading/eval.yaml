@@ -1,0 +1,15 @@
+name: code-reading
+title: 代码阅读指导提示词（文件级）
+description: 同一文件讲解任务的 6 个提示词版本对比，材料含 3 个合成片段与 3 个来自 ai-steward-a 的真实文件（只读摘录）
+labels:
+  - v1 陪读体
+  - v2 原则式
+  - v3 压缩式
+  - v4 元任务式
+  - v5 合并版
+  - v6 最终版
+defaultAsserts: |
+  - type: python
+    value: file://../../core/assertions/ascii_flow_only.py
+  - type: python
+    value: file://../../core/assertions/no_prose_wall.py

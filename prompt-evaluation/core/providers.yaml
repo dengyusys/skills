@@ -1,0 +1,25 @@
+# 公共模型配置：所有测评共用，换模型/端点只改这一处。
+# 该文件以片段形式嵌入各测评的 generated.yaml（见 core/scripts/run.cjs）。
+# 注意：GLM-5.3 为思考型模型，必须显式关闭 thinking，否则思考文本会拼进输出污染断言。
+
+providers:
+  - id: anthropic:messages:glm-5.3-flash
+    label: glm-5.3-flash
+    config:
+      apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+      temperature: 0
+      max_tokens: 8000
+      thinking:
+        type: disabled
+
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:glm-5.3
+      config:
+        apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+        temperature: 0
+        max_tokens: 4000
+        thinking:
+          type: disabled
+  #__ASSERTS__#

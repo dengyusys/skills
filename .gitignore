@@ -11,4 +11,9 @@ Thumbs.db
 prompt-evaluation/.env
 prompt-evaluation/.promptfoo/
 prompt-evaluation/results/
+prompt-evaluation/reports/
+prompt-evaluation/evals/*/generated.yaml
 __pycache__/
+
+# 会话与工具产物
+.zcode/

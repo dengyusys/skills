@@ -1,0 +1,18 @@
+description: 超长配置拆分（规则3）
+vars:
+  request: 这个配置对象越来越难维护了，请按我的个人代码风格重构它。
+  code: |
+    // 文件：config.ts
+    export const config = {
+      dataRoot: resolvePath("./data"), webRoot: resolvePath("./web"),
+      host: "127.0.0.1", port: Number(env.PORT || 3000),
+      dbUrl: env.DB_URL, dbPoolSize: 5,
+      authProvider: "oauth", authClientId: env.CLIENT_ID, authSecret: env.SECRET,
+      rateLimit: 100, rateWindowMs: 60000,
+      uploadMaxMb: 20, logLevel: env.LOG_LEVEL || "info", timeoutMs: 30000,
+    };
+assert:
+  - type: llm-rubric
+    value: 按关注点把配置拆成了内聚切片（如路径、服务地址、数据库、认证、限流各归各），而不是保留一个大平铺对象
+  - type: llm-rubric
+    value: 拆分方式务实：没有制造一堆只转发一两个值的无意义文件；提供了消费方按需引入、入口组合的形态（如 index 汇总重导出），并说明这样拆的依据

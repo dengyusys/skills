@@ -1,0 +1,8 @@
+name: code-style
+title: code-style 技能测试（三变体）
+description: 仓库 skills/code-style 技能的有效性测试：无技能 / 仅主文件 / 主文件+细则 三变体对比，六案例覆盖五条核心规则与边界陷阱
+labels:
+  - 无技能
+  - 仅主文件
+  - 主文件+细则
+defaultAsserts: |

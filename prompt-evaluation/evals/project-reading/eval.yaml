@@ -1,0 +1,15 @@
+name: project-reading
+title: 代码阅读指导提示词（项目级三维度）
+description: 同一套提示词换任务类型的泛化测试：项目设计讲解、架构与数据流、代码可读性评价；材料摘自 ai-steward-a 项目文档（只读）
+labels:
+  - v1 陪读体
+  - v2 原则式
+  - v3 压缩式
+  - v4 元任务式
+  - v5 合并版
+  - v6 最终版
+defaultAsserts: |
+  - type: python
+    value: file://../../core/assertions/ascii_flow_only.py
+  - type: python
+    value: file://../../core/assertions/no_prose_wall.py

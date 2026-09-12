@@ -1,0 +1,12 @@
+{
+  "name": "prompt-evaluation",
+  "version": "2.0.0",
+  "private": true,
+  "description": "提示词与技能测评系统：core 公共设施 + evals 测评项目 + 可视化报告",
+  "scripts": {
+    "eval": "node core/scripts/run.cjs",
+    "new": "node core/scripts/new-eval.cjs",
+    "report": "node core/scripts/report.cjs",
+    "dashboard": "node core/scripts/serve.cjs"
+  }
+}

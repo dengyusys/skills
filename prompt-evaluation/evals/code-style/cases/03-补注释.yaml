@@ -1,0 +1,22 @@
+description: 补注释（规则1）
+vars:
+  request: 请按我的个人注释规范给这个文件补上注释。
+  code: |
+    // 文件：session.ts
+    import { randomUUID } from "node:crypto";
+
+    export function createSession(userId: string): Session {
+      const now = Date.now();
+      const expiresAt = now + 30 * 60 * 1000;
+      const token = randomUUID();
+      return { id: randomUUID(), userId, token, createdAt: now, expiresAt, revoked: false };
+    }
+
+    export function isExpired(session: Session, now = Date.now()): boolean {
+      return session.expiresAt <= now || session.revoked;
+    }
+assert:
+  - type: llm-rubric
+    value: 注释是中文、解释"为什么"或职责契约（如会话为何 30 分钟过期、isExpired 把已撤销也视为过期的语义），而不是逐行翻译代码在做什么
+  - type: llm-rubric
+    value: 注释克制：显而易见的代码（如 randomUUID 生成唯一 id）没有硬加注释；公共导出项的说明用了 JSDoc 或块注释等适合 TS 的形式，没有机械地为每个参数堆 @param

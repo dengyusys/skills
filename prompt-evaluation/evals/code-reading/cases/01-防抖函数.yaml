@@ -1,0 +1,18 @@
+description: JS 防抖函数（零基础第一次读）
+vars:
+  request: 我刚入门编程，带我把这个文件读懂。
+  code: |
+    // 文件：debounce.ts
+    function debounce(fn, wait) {
+      let timer = null;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), wait);
+      };
+    }
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 先用事理或日常类比让零基础读者明白这段代码解决什么问题，之后才引入"防抖/debounce/闭包"这类术语，且术语首次出现时有一句话解释
+  - type: llm-rubric
+    value: 讲清了 timer 为什么必须保存在外层函数里、每次调用为什么要先 clearTimeout，而不是只描述代码字面上做了什么

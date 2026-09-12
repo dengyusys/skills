@@ -1,0 +1,26 @@
+description: write-queue.ts（14 行微而深）
+vars:
+  request: 这文件才十几行，但我看不懂为什么这么写，带我逐行搞懂。
+  code: |
+    /**
+     * 串行任务队列：后一个任务严格等前一个完成，保证写入顺序。
+     * 失败的尾任务会被吞掉，避免中断后续任务，但调用方仍能拿到原始结果。
+     */
+
+    export class WriteQueue {
+      #tail: Promise<unknown> = Promise.resolve();
+
+      enqueue<T>(task: () => Promise<T>): Promise<T> {
+        const result = this.#tail.then(task);
+        this.#tail = result.catch(() => {});
+        return result;
+      }
+    }
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 讲清了"串行保证"来自哪里：每个新任务都挂在上一条链尾（#tail）之后排队执行，而不是并发抢跑
+  - type: llm-rubric
+    value: 讲清了 result 与 #tail 的分工：返回给调用方的 result 保留任务的原始失败，而 #tail 用 catch 把错误吞掉只为让下一个任务还能执行；吞错发生在链条上而不是返回值上
+  - type: llm-rubric
+    value: 先用排队/流水线这类日常事理让零基础读者明白"为什么要串行"，之后才引入 Promise 链、then 等术语，且术语首次出现有解释

@@ -1,0 +1,146 @@
+description: record-updater.ts（134 行长文件导读）
+vars:
+  request: 这个文件好长，我不知道从哪读起，带我整体读懂。
+  code: |
+    /**
+     * 日程记录更新入口：串行执行 SQLite 事务，并按 requestId 保证进程内幂等。
+     */
+
+    import { openScheduleDatabase } from "./schedule-database.ts";
+    import type BetterSqlite3 from "better-sqlite3";
+
+    // SQLite 数据库实例类型（better-sqlite3）。
+    type Database = BetterSqlite3.Database;
+    import {
+      applyOperations,
+      type AppliedRecord,
+      type TransactionFaultInjector,
+    } from "./record-document.ts";
+    import { WriteQueue } from "./write-queue.ts";
+
+    export { RecordConflictError } from "./record-document.ts";
+
+    interface UpdateResult {
+      requestId: string;
+      applied: boolean;
+      categories: number;
+      records: AppliedRecord[];
+    }
+
+    interface CompletedUpdate {
+      expiresAt: number;
+      result: UpdateResult;
+    }
+
+    export class RecordUpdater {
+      #queue = new WriteQueue();
+      #completed = new Map<string, CompletedUpdate>();
+      dataLocation: string;
+      faultInjector: TransactionFaultInjector | undefined;
+      completedCacheMax: number;
+      completedTtlMs: number;
+      now: () => number;
+
+      constructor({
+        scheduleDbPath,
+        faultInjector,
+        completedCacheMax = 1000,
+        completedTtlMs = 20 * 60 * 1000,
+        now = () => Date.now(),
+      }: {
+        scheduleDbPath?: string;
+        faultInjector?: TransactionFaultInjector;
+        completedCacheMax?: number;
+        completedTtlMs?: number;
+        now?: () => number;
+      } = {}) {
+        if (!scheduleDbPath) throw new Error("scheduleDbPath 是必需参数");
+        if (!Number.isInteger(completedCacheMax) || completedCacheMax < 1) {
+          throw new Error("completedCacheMax 必须是正整数");
+        }
+        if (!Number.isInteger(completedTtlMs) || completedTtlMs < 1) {
+          throw new Error("completedTtlMs 必须是正整数");
+        }
+        this.dataLocation = scheduleDbPath;
+        this.faultInjector = faultInjector;
+        this.completedCacheMax = completedCacheMax;
+        this.completedTtlMs = completedTtlMs;
+        this.now = now;
+      }
+
+      #completedResult(requestId: string): UpdateResult | null {
+        const currentTime = this.now();
+        for (const [key, entry] of this.#completed) {
+          if (currentTime >= entry.expiresAt) this.#completed.delete(key);
+        }
+        return this.#completed.get(requestId)?.result ?? null;
+      }
+
+      #remember(result: UpdateResult): void {
+        while (this.#completed.size >= this.completedCacheMax) {
+          const oldest = this.#completed.keys().next().value as string | undefined;
+          if (oldest === undefined) break;
+          this.#completed.delete(oldest);
+        }
+        this.#completed.set(result.requestId, {
+          expiresAt: this.now() + this.completedTtlMs,
+          result,
+        });
+      }
+
+      update({
+        requestId,
+        operations,
+      }: {
+        requestId: string;
+        operations: unknown[];
+      }): Promise<UpdateResult> {
+        if (!requestId || typeof requestId !== "string") {
+          return Promise.reject(new Error("requestId 是必需参数"));
+        }
+        if (!Array.isArray(operations) || operations.length === 0) {
+          return Promise.reject(new Error("operations 不能为空"));
+        }
+        const completed = this.#completedResult(requestId);
+        if (completed) return Promise.resolve(structuredClone(completed));
+
+        return this.#queue.enqueue(async () => {
+          const queuedCompleted = this.#completedResult(requestId);
+          if (queuedCompleted) return structuredClone(queuedCompleted);
+
+          const database: Database = openScheduleDatabase(this.dataLocation);
+          let result: UpdateResult;
+          try {
+            database.exec("BEGIN IMMEDIATE");
+            const applied = applyOperations(
+              database,
+              operations,
+              this.faultInjector,
+            );
+            result = {
+              requestId,
+              applied: true,
+              categories: applied.categories,
+              records: applied.records,
+            };
+            database.exec("COMMIT");
+          } catch (error) {
+            if (database.inTransaction) database.exec("ROLLBACK");
+            throw error;
+          } finally {
+            database.close();
+          }
+
+          this.#remember(result);
+          return structuredClone(result);
+        });
+      }
+    }
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 开篇点明这个文件的职责（带幂等保护的日程更新入口），并给零基础读者一张阅读地图：先看哪几个部分、按什么顺序读，而不是从头到尾平铺
+  - type: llm-rubric
+    value: 讲清了 requestId 幂等的完整机制：进队列前查一次缓存、进队列后再查一次，两次检查各自防的是什么（并发等待期间的重复请求）；返回时用 structuredClone 防止调用方改坏缓存
+  - type: llm-rubric
+    value: 讲清了 #completedResult 顺手清理过期条目、#remember 按容量淘汰最老条目这两段"顺手做的小事"各自的目的，没有跳过或含糊带过

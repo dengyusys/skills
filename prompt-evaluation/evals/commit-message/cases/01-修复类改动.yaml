@@ -1,0 +1,10 @@
+description: 修复类改动（中文仓库）
+vars:
+  request: 根据当前改动生成提交信息，仓库历史都是中文提交。
+  diff: |
+    src/date.ts: 修复闰年时日期解析溢出的问题，day 计算超出范围
+assert:
+  - type: regex
+    value: "^(feat|fix|docs|refactor|perf|test|build|ci|chore)(\\(.+\\))?:"
+  - type: llm-rubric
+    value: 提交信息描述修复带来的结果，而不是罗列修改了哪些文件或实现步骤

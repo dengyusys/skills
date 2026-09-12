@@ -1,0 +1,11 @@
+description: 示例案例（改名为有意义的名字，如 01-防抖函数.yaml）
+vars:
+  request: 我刚入门编程，带我把这个文件读懂。
+  code: |
+    // 文件：example.ts
+    export function add(a: number, b: number): number {
+      return a + b;
+    }
+assert:
+  - type: llm-rubric
+    value: 开篇用文件名做标题，一句话说清这个文件是干什么的

@@ -1,0 +1,75 @@
+description: 代码可读性评价（好在哪、对新手不友好在哪）
+vars:
+  request: 从可读性角度评价下面这个文件：哪些地方对读者友好、哪些地方对新手不友好、可以怎么改进？
+  code: |
+    /**
+     * 记忆操作执行器：在同一事务中应用全部动作，并通过显式数据库依赖
+     * 保证测试可使用临时数据库且不触碰生产单例。
+     */
+
+    import { createMemoryRepository } from "./repository.ts";
+    import type { MemoryAction } from "./types.ts";
+    import type BetterSqlite3 from "better-sqlite3";
+
+    // SQLite 数据库实例类型（better-sqlite3，由记忆域直接持有）。
+    type Database = BetterSqlite3.Database;
+
+    export function applyMemoryActions({
+      db,
+      userId,
+      scope,
+      sourceMessageId,
+      actions,
+    }: {
+      db: Database;
+      userId: string;
+      scope: string;
+      sourceMessageId: string | null;
+      actions: MemoryAction[];
+    }): void {
+      if (!db) throw new TypeError("applyMemoryActions 需要 db 参数");
+      if (!Array.isArray(actions) || actions.length === 0) {
+        return;
+      }
+
+      const repository = createMemoryRepository(db);
+
+      db.exec("BEGIN IMMEDIATE");
+
+      try {
+        for (const action of actions) {
+          if (action.action === "upsert") {
+            repository.upsert({
+              userId,
+              scope,
+              sourceMessageId,
+              memoryKey: action.memoryKey,
+              category: action.category ?? "",
+              content: action.content ?? "",
+              importance: action.importance ?? 1,
+            });
+          }
+
+          if (action.action === "remove") {
+            repository.remove({
+              userId,
+              scope,
+              memoryKey: action.memoryKey,
+            });
+          }
+        }
+
+        db.exec("COMMIT");
+      } catch (error) {
+        db.exec("ROLLBACK");
+        throw error;
+      }
+    }
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 评价引用了文件里的具体证据（如文件头注释、参数校验的位置、事务三行的写法、action ?? 默认值等），而不是空泛地说"代码很整洁"
+  - type: llm-rubric
+    value: 分别指出对新手友好和不友好的地方各至少一处（例如友好：头注释说明意图、依赖注入便于测试；不友好：MemoryAction 类型在别处、upsert 字段较多没有分组说明），并给出具体可执行的改进建议
+  - type: llm-rubric
+    value: 评价本身先给总体结论，再用列表或表格分维度展开，零基础读者能看懂每条评价的理由

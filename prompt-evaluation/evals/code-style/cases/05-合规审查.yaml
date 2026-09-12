@@ -1,0 +1,23 @@
+description: 合规代码审查（克制性 + 真实代码）
+vars:
+  request: 请按我的个人代码风格审查这个文件，指出需要修改的地方。
+  code: |
+    /**
+     * 串行任务队列：后一个任务严格等前一个完成，保证写入顺序。
+     * 失败的尾任务会被吞掉，避免中断后续任务，但调用方仍能拿到原始结果。
+     */
+
+    export class WriteQueue {
+      #tail: Promise<unknown> = Promise.resolve();
+
+      enqueue<T>(task: () => Promise<T>): Promise<T> {
+        const result = this.#tail.then(task);
+        this.#tail = result.catch(() => {});
+        return result;
+      }
+    }
+assert:
+  - type: llm-rubric
+    value: 审查结论克制、不无中生有：该文件本身已高度符合规范（文件头注释解释职责与为什么、代码按逻辑分段、无嵌套三元、无过度抽象），审查没有为了找问题而硬挑毛病或建议批量改写
+  - type: llm-rubric
+    value: 如有改进建议，每条都具体且符合规范方向（注释为什么、分段、条件表达、抽象边界之一），没有提出与规范相悖的建议（如"给每行加注释""把类拆成更多文件"）

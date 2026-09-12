@@ -1,0 +1,19 @@
+description: Dockerfile（文件级导读与格式约束）
+vars:
+  request: 这个文件我完全没接触过，从头讲给我听。
+  code: |
+    # 文件：Dockerfile
+    FROM node:20-alpine
+    WORKDIR /app
+    COPY package*.json ./
+    RUN npm ci
+    COPY . .
+    RUN npm run build
+    EXPOSE 3000
+    CMD ["node", "dist/main.js"]
+  strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+assert:
+  - type: llm-rubric
+    value: 开篇直接点明这个文件整体是干什么的，没有绕圈子
+  - type: llm-rubric
+    value: 讲解步骤用列表或表格组织，没有大段连续文字堆砌

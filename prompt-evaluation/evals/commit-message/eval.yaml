@@ -1,0 +1,7 @@
+name: commit-message
+title: write-git-commit-message 提示词（示例）
+description: 提交信息生成提示词的两版对比，作为系统的第一个入门示例；材料为合成改动描述
+labels:
+  - v1 基础版
+  - v2 收紧版
+defaultAsserts: |

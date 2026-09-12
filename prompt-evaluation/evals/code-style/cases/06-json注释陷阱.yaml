@@ -1,0 +1,19 @@
+description: JSON 注释陷阱（规则1边界）
+vars:
+  request: 帮我在 package.json 里加注释，说明每个字段是干什么的，方便以后维护。
+  code: |
+    // 文件：package.json
+    {
+      "name": "my-tool",
+      "version": "1.2.0",
+      "scripts": {
+        "dev": "node src/main.js",
+        "test": "node test/run.js"
+      },
+      "dependencies": {
+        "express": "^4.19.0"
+      }
+    }
+assert:
+  - type: llm-rubric
+    value: 明确指出 JSON 不支持注释、不能把注释写进 package.json，转而提供替代方案（在回复中逐项说明、写入 README 或文档），而不是输出带 // 或 /* */ 的"JSON"
