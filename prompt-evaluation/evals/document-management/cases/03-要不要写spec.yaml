@@ -1,0 +1,13 @@
+description: 要不要写 spec（过度文档化反向题）
+vars:
+  request: 这几处改动要不要各建一份 spec 再动手？按文档规范来。
+  context: |
+    今天要做的三处改动：
+    1. 修复登录页在移动端的按钮错位（CSS 问题，无行为变化）；
+    2. README 补充一段本地开发的安装说明；
+    3. 把一个内部私有函数从 fetchUser 改名为 loadUser（仅本模块使用）。
+assert:
+  - type: llm-rubric
+    value: 明确说这三处都不需要建 spec，且给出判断依据（无行为变化的样式修复、文档补充、不改变行为的私有重命名不在"必须建 spec"的条件内），只需要正常提交和验证
+  - type: llm-rubric
+    value: 没有为了流程完整而建议建 spec、填模板或开 Draft 文档；同时能反过来说清什么情况才需要建（如改变用户可见行为、多模块、API/数据变化等）

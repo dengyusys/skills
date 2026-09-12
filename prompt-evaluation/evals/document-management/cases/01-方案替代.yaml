@@ -1,0 +1,19 @@
+description: 方案替代（spec 改还是新增——核心痛点场景）
+vars:
+  request: 文档这块应该怎么处理？是改现有的 spec 还是新建一份？帮我判断并给出具体操作。
+  context: |
+    项目现有文档（节选自 docs 索引）：
+    - docs/specs/002-memory-service-integration.md —— 状态 Completed，记录"长期记忆服务集成"方案：
+      Memory 作为独立进程（127.0.0.1:4175），Gateway 通过本地 HTTP 与其协作，
+      含超时降级、提案端口适配器、/api/memories* 代理路由、双份依赖与独立启动编排。
+    - docs/decisions/010-gateway-vertical-domains.md —— 状态 Accepted。
+
+    刚发生的事：我决定放弃跨进程集成方案，把 Memory 作为第三业务域并入 Gateway
+    （domains/memory/），删除双端 HTTP 适配层，memory.db 仍是独立 SQLite。
+    理由：单用户本地应用，进程隔离收益趋零，双端适配成本是持续负担。
+    这个决定已确认要执行。
+assert:
+  - type: llm-rubric
+    value: 判断方向正确：旧方案被新决策整体替代，应当新写一条 ADR 记录"为什么合并"（属于重要技术决策），并把 Spec 002 标记为 Superseded 指向新 ADR、新 ADR 反向链接 Spec 002；同时明确说不要新建一份重复描述记忆集成的 spec（一个主题只留一个当前有效来源）
+  - type: llm-rubric
+    value: 给出具体可执行的步骤（涉及哪些文件、状态怎么改、链接怎么建），且有波及面意识——架构文档跨进程描述、docs 索引、进度文档三个方向至少提及两个；没有建议复制旧 spec 为"旧版/最终版"之类文件

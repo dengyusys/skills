@@ -1,0 +1,16 @@
+description: 文档与代码冲突（旧模块路径残留）
+vars:
+  request: 帮我处理一下文档和代码的不一致。
+  context: |
+    代码现状：Gateway 已重组为垂直域切片——src/domains/{schedule,proposals,memory}/
+    与 src/infrastructure/，旧的 src/http/、src/routes/ 层已删除（两周前的重构）。
+
+    文档现状：docs/architecture/system-overview.md（状态 Active）仍写着
+    "HTTP 层位于 src/http/，路由注册集中在 src/routes/index.ts"；
+    另外文档里提过的"SQLite 备份命令 pnpm run backup"在代码里也已移除。
+    其余文档（产品、进度、运维）经查与代码一致。
+assert:
+  - type: llm-rubric
+    value: 以代码为事实来源，同步修正架构文档中的旧模块路径和已移除的备份命令描述；只更新受影响的文档，没有扩大到无关文档的批量改写
+  - type: llm-rubric
+    value: 有检查顺序意识（架构文档之外顺带核对引用这些路径的其他文档/README），并指出应避免"代码已变文档未跟"的长期漂移（与重构同批提交或尽快跟进均可）；两个要点至少覆盖一个即算过

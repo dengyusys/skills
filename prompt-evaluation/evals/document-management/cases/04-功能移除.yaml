@@ -1,0 +1,14 @@
+description: 功能移除（spec 删除与索引同步）
+vars:
+  request: Mobile 应用已经移出去了，这两份 spec 和相关引用怎么处理？
+  context: |
+    我已确认把 Mobile 应用从本仓库移除，独立维护到另一个仓库。docs 里还留着：
+    - docs/specs/003-mobile-app.md —— 状态 Completed，描述本仓库内的 Mobile 应用方案
+    - docs/specs/006-android-device-acceptance.md —— 状态 Completed，真机验收标准
+    - docs/README.md 索引里列着这两份；产品文档里有一节提到移动端规划。
+    这个移除决定是最终决定，不会回迁。
+assert:
+  - type: llm-rubric
+    value: 处理方向正确：在用户已授权移除的前提下，删除这两份 spec（或标记 Archived/Deprecated 并注明移出去向——两种方案都可接受），同步把 docs/README 索引和产品文档中的移动端引用清掉；明确不复用 003/006 这两个编号
+  - type: llm-rubric
+    value: 有引用清理意识（说明删除前要检查还有哪些文档链接到这两份 spec），且不建议把它们复制成"备份版/旧版"留在仓库里（历史由 Git 保留）；两个要点至少覆盖一个即算过
