@@ -1,0 +1,67 @@
+# 提示词 A/B 评测示例：以 write-git-commit-message 技能为对象
+#
+# 密钥配置：智谱 GLM 的 key 放在本地 .env（已被 .gitignore 忽略，禁止提交）。
+# 换模型时：改下方 providers 即可，DeepSeek/OpenAI/Ollama 示例已注释。
+#
+# 运行：npx promptfoo@latest eval --env-file .env
+# 查看：npx promptfoo@latest view
+
+description: write-git-commit-message 技能提示词对比
+
+prompts:
+  - file://prompts/v1.txt
+  - file://prompts/v2.txt
+
+providers:
+  # 智谱 GLM：密钥放在本地 .env（已 git-ignore，禁止提交）
+  # 本 key 为 Coding Plan，走 Anthropic 兼容端点（标准按量端点会报 1113）
+  - id: anthropic:messages:glm-5.3-flash
+    label: glm-5.3-flash
+    config:
+      apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+      temperature: 0
+      max_tokens: 4000
+
+# llm-rubric 断言用的裁判模型
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:glm-5.3
+      config:
+        apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+        temperature: 0
+        max_tokens: 2000
+
+tests:
+  - description: 修复类改动（中文仓库）
+    vars:
+      request: 根据当前改动生成提交信息，仓库历史都是中文提交。
+      diff: |
+        src/date.ts: 修复闰年时日期解析溢出的问题，day 计算超出范围
+    assert:
+      - type: regex
+        value: "^(feat|fix|docs|refactor|perf|test|build|ci|chore)(\\(.+\\))?:"
+      - type: llm-rubric
+        value: 提交信息描述修复带来的结果，而不是罗列修改了哪些文件或实现步骤
+
+  - description: 英文项目的新功能
+    vars:
+      request: 仓库历史提交都是英文，根据改动生成提交信息。
+      diff: |
+        lib/cache.ts: 新增 LRU 缓存，命中率提升 30%，接口响应更快
+    assert:
+      - type: regex
+        value: "^(feat|fix|docs|refactor|perf|test|build|ci|chore)(\\(.+\\))?:"
+      - type: llm-rubric
+        value: 提交信息使用英文书写
+
+  - description: 互不相关的多处改动
+    vars:
+      request: 根据当前改动生成提交信息，仓库历史为中文。
+      diff: |
+        1) 修复登录页在移动端的按钮错位
+        2) 把包管理器从 npm 迁移到 pnpm 并更新 CI 脚本
+        3) 补充 README 安装说明
+    assert:
+      - type: llm-rubric
+        value: 指出改动包含互不相关的多个目的并建议拆分提交，而不是直接给出单一提交信息

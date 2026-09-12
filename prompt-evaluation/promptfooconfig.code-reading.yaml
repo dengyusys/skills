@@ -1,0 +1,363 @@
+# 代码阅读指导 skill：提示词迭代对比评测
+#
+# 运行：npx promptfoo@latest eval -c promptfooconfig.code-reading.yaml --env-file .env
+# 查看：npx promptfoo@latest view
+#
+# 断言设计：机械断言（ASCII 制表符、文字墙）放 defaultTest 对全部版本生效；
+# llm-rubric 只测四个版本共同承诺的目标，保证对比公平。
+# 第 2 轮变更：裁判改用 glm-5.3（弱裁判会漏判机制错误与文字墙）；
+# 闭包 rubric 收紧为"共享变量"机制判定；新增 v5 合并版。
+# 第 2.5 轮变更：新增 3 个真实代码案例（取自本地 D:\ai-steward-a，只读引用，
+# 代码副本固化在本配置中，便于评测可复现）：write-queue（14 行微而深）、
+# executor（63 行事务模式）、record-updater（134 行长文件导读）。
+
+description: 代码阅读指导 v1-v6 对比（第 3 轮）
+
+prompts:
+  - file://prompts/code-reading/v1.txt
+  - file://prompts/code-reading/v2.txt
+  - file://prompts/code-reading/v3.txt
+  - file://prompts/code-reading/v4.txt
+  - file://prompts/code-reading/v5.txt
+  - file://prompts/code-reading/v6.txt
+
+providers:
+  # Coding Plan key 走 Anthropic 兼容端点（标准按量端点会报 1113）
+  # key 从 .env 的 ANTHROPIC_API_KEY 读取；GLM-5.3 为思考型模型，max_tokens 需给足
+  - id: anthropic:messages:glm-5.3-flash
+    label: glm-5.3-flash
+    config:
+      apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+      temperature: 0
+      max_tokens: 8000
+      # 关闭思考块：否则 thinking 文本会拼进输出，污染所有断言
+      thinking:
+        type: disabled
+
+# 裁判模型：glm-5.3（比被测的 flash 强一档，避免弱裁判漏判）
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:glm-5.3
+      config:
+        apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+        temperature: 0
+        max_tokens: 4000
+        thinking:
+          type: disabled
+  assert:
+    - type: python
+      value: file://assertions/ascii_flow_only.py
+    - type: python
+      value: file://assertions/no_prose_wall.py
+
+tests:
+  # strategy 是 v4 的动态策略槽位，其余版本不引用；首轮给中性种子
+  - description: JS 防抖函数（零基础第一次读）
+    vars:
+      request: 我刚入门编程，带我把这个文件读懂。
+      code: |
+        // 文件：debounce.ts
+        function debounce(fn, wait) {
+          let timer = null;
+          return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), wait);
+          };
+        }
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 先用事理或日常类比让零基础读者明白这段代码解决什么问题，之后才引入"防抖/debounce/闭包"这类术语，且术语首次出现时有一句话解释
+      - type: llm-rubric
+        value: 讲清了 timer 为什么必须保存在外层函数里、每次调用为什么要先 clearTimeout，而不是只描述代码字面上做了什么
+
+  - description: Python 闭包陷阱（预期外的输出）
+    vars:
+      request: 下面这段代码我预期打印 0 1 2，实际打印 2 2 2，带我搞懂为什么。
+      code: |
+        # 文件：callbacks_demo.py
+        callbacks = []
+        for i in range(3):
+            callbacks.append(lambda: print(i))
+
+        for cb in callbacks:
+            cb()
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 明确指出三个 lambda 函数共享同一个循环变量 i（而不是各自捕获了创建时的值）：循环结束时 i 变成 2，三个函数调用时读到的都是这个变量的当前值；并由此解释为什么打印 2 2 2 而不是 0 1 2
+      - type: llm-rubric
+        value: 全程只围绕"为什么打印 2 2 2"这一条主线，没有跑题扩展；使用的类比或例子前后一致，没有中途更换
+
+  - description: Dockerfile（文件级导读与格式约束）
+    vars:
+      request: 这个文件我完全没接触过，从头讲给我听。
+      code: |
+        # 文件：Dockerfile
+        FROM node:20-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY . .
+        RUN npm run build
+        EXPOSE 3000
+        CMD ["node", "dist/main.js"]
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 开篇直接点明这个文件整体是干什么的，没有绕圈子
+      - type: llm-rubric
+        value: 讲解步骤用列表或表格组织，没有大段连续文字堆砌
+
+  # ===== 真实代码案例（来源：D:\ai-steward-a，只读引用，副本固化于此） =====
+
+  - description: write-queue.ts（14 行微而深）
+    vars:
+      request: 这文件才十几行，但我看不懂为什么这么写，带我逐行搞懂。
+      code: |
+        /**
+         * 串行任务队列：后一个任务严格等前一个完成，保证写入顺序。
+         * 失败的尾任务会被吞掉，避免中断后续任务，但调用方仍能拿到原始结果。
+         */
+
+        export class WriteQueue {
+          #tail: Promise<unknown> = Promise.resolve();
+
+          enqueue<T>(task: () => Promise<T>): Promise<T> {
+            const result = this.#tail.then(task);
+            this.#tail = result.catch(() => {});
+            return result;
+          }
+        }
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 讲清了"串行保证"来自哪里：每个新任务都挂在上一条链尾（#tail）之后排队执行，而不是并发抢跑
+      - type: llm-rubric
+        value: 讲清了 result 与 #tail 的分工：返回给调用方的 result 保留任务的原始失败，而 #tail 用 catch 把错误吞掉只为让下一个任务还能执行；吞错发生在链条上而不是返回值上
+      - type: llm-rubric
+        value: 先用排队/流水线这类日常事理让零基础读者明白"为什么要串行"，之后才引入 Promise 链、then 等术语，且术语首次出现有解释
+
+  - description: executor.ts（63 行事务模式）
+    vars:
+      request: 带我读懂这个文件，重点是那几行 BEGIN / COMMIT / ROLLBACK。
+      code: |
+        /**
+         * 记忆操作执行器：在同一事务中应用全部动作，并通过显式数据库依赖
+         * 保证测试可使用临时数据库且不触碰生产单例。
+         */
+
+        import { createMemoryRepository } from "./repository.ts";
+        import type { MemoryAction } from "./types.ts";
+        import type BetterSqlite3 from "better-sqlite3";
+
+        // SQLite 数据库实例类型（better-sqlite3，由记忆域直接持有）。
+        type Database = BetterSqlite3.Database;
+
+        export function applyMemoryActions({
+          db,
+          userId,
+          scope,
+          sourceMessageId,
+          actions,
+        }: {
+          db: Database;
+          userId: string;
+          scope: string;
+          sourceMessageId: string | null;
+          actions: MemoryAction[];
+        }): void {
+          if (!db) throw new TypeError("applyMemoryActions 需要 db 参数");
+          if (!Array.isArray(actions) || actions.length === 0) {
+            return;
+          }
+
+          const repository = createMemoryRepository(db);
+
+          db.exec("BEGIN IMMEDIATE");
+
+          try {
+            for (const action of actions) {
+              if (action.action === "upsert") {
+                repository.upsert({
+                  userId,
+                  scope,
+                  sourceMessageId,
+                  memoryKey: action.memoryKey,
+                  category: action.category ?? "",
+                  content: action.content ?? "",
+                  importance: action.importance ?? 1,
+                });
+              }
+
+              if (action.action === "remove") {
+                repository.remove({
+                  userId,
+                  scope,
+                  memoryKey: action.memoryKey,
+                });
+              }
+            }
+
+            db.exec("COMMIT");
+          } catch (error) {
+            db.exec("ROLLBACK");
+            throw error;
+          }
+        }
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 用"要么全部完成、要么全部撤销"这类事理讲清事务的用途，解释 BEGIN 与 COMMIT 之间的操作为什么是一个整体
+      - type: llm-rubric
+        value: 讲清了 catch 里 ROLLBACK 之后为什么还要 throw error（撤销改动和把失败报告给调用方是两件事），以及空 actions 提前 return 的位置为什么合理
+      - type: llm-rubric
+        value: 讲清了 db 作为参数显式传入的目的（依赖注入：测试可换临时数据库、不碰生产单例），与文件头注释的说明对应
+
+  - description: record-updater.ts（134 行长文件导读）
+    vars:
+      request: 这个文件好长，我不知道从哪读起，带我整体读懂。
+      code: |
+        /**
+         * 日程记录更新入口：串行执行 SQLite 事务，并按 requestId 保证进程内幂等。
+         */
+
+        import { openScheduleDatabase } from "./schedule-database.ts";
+        import type BetterSqlite3 from "better-sqlite3";
+
+        // SQLite 数据库实例类型（better-sqlite3）。
+        type Database = BetterSqlite3.Database;
+        import {
+          applyOperations,
+          type AppliedRecord,
+          type TransactionFaultInjector,
+        } from "./record-document.ts";
+        import { WriteQueue } from "./write-queue.ts";
+
+        export { RecordConflictError } from "./record-document.ts";
+
+        interface UpdateResult {
+          requestId: string;
+          applied: boolean;
+          categories: number;
+          records: AppliedRecord[];
+        }
+
+        interface CompletedUpdate {
+          expiresAt: number;
+          result: UpdateResult;
+        }
+
+        export class RecordUpdater {
+          #queue = new WriteQueue();
+          #completed = new Map<string, CompletedUpdate>();
+          dataLocation: string;
+          faultInjector: TransactionFaultInjector | undefined;
+          completedCacheMax: number;
+          completedTtlMs: number;
+          now: () => number;
+
+          constructor({
+            scheduleDbPath,
+            faultInjector,
+            completedCacheMax = 1000,
+            completedTtlMs = 20 * 60 * 1000,
+            now = () => Date.now(),
+          }: {
+            scheduleDbPath?: string;
+            faultInjector?: TransactionFaultInjector;
+            completedCacheMax?: number;
+            completedTtlMs?: number;
+            now?: () => number;
+          } = {}) {
+            if (!scheduleDbPath) throw new Error("scheduleDbPath 是必需参数");
+            if (!Number.isInteger(completedCacheMax) || completedCacheMax < 1) {
+              throw new Error("completedCacheMax 必须是正整数");
+            }
+            if (!Number.isInteger(completedTtlMs) || completedTtlMs < 1) {
+              throw new Error("completedTtlMs 必须是正整数");
+            }
+            this.dataLocation = scheduleDbPath;
+            this.faultInjector = faultInjector;
+            this.completedCacheMax = completedCacheMax;
+            this.completedTtlMs = completedTtlMs;
+            this.now = now;
+          }
+
+          #completedResult(requestId: string): UpdateResult | null {
+            const currentTime = this.now();
+            for (const [key, entry] of this.#completed) {
+              if (currentTime >= entry.expiresAt) this.#completed.delete(key);
+            }
+            return this.#completed.get(requestId)?.result ?? null;
+          }
+
+          #remember(result: UpdateResult): void {
+            while (this.#completed.size >= this.completedCacheMax) {
+              const oldest = this.#completed.keys().next().value as string | undefined;
+              if (oldest === undefined) break;
+              this.#completed.delete(oldest);
+            }
+            this.#completed.set(result.requestId, {
+              expiresAt: this.now() + this.completedTtlMs,
+              result,
+            });
+          }
+
+          update({
+            requestId,
+            operations,
+          }: {
+            requestId: string;
+            operations: unknown[];
+          }): Promise<UpdateResult> {
+            if (!requestId || typeof requestId !== "string") {
+              return Promise.reject(new Error("requestId 是必需参数"));
+            }
+            if (!Array.isArray(operations) || operations.length === 0) {
+              return Promise.reject(new Error("operations 不能为空"));
+            }
+            const completed = this.#completedResult(requestId);
+            if (completed) return Promise.resolve(structuredClone(completed));
+
+            return this.#queue.enqueue(async () => {
+              const queuedCompleted = this.#completedResult(requestId);
+              if (queuedCompleted) return structuredClone(queuedCompleted);
+
+              const database: Database = openScheduleDatabase(this.dataLocation);
+              let result: UpdateResult;
+              try {
+                database.exec("BEGIN IMMEDIATE");
+                const applied = applyOperations(
+                  database,
+                  operations,
+                  this.faultInjector,
+                );
+                result = {
+                  requestId,
+                  applied: true,
+                  categories: applied.categories,
+                  records: applied.records,
+                };
+                database.exec("COMMIT");
+              } catch (error) {
+                if (database.inTransaction) database.exec("ROLLBACK");
+                throw error;
+              } finally {
+                database.close();
+              }
+
+              this.#remember(result);
+              return structuredClone(result);
+            });
+          }
+        }
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 开篇点明这个文件的职责（带幂等保护的日程更新入口），并给零基础读者一张阅读地图：先看哪几个部分、按什么顺序读，而不是从头到尾平铺
+      - type: llm-rubric
+        value: 讲清了 requestId 幂等的完整机制：进队列前查一次缓存、进队列后再查一次，两次检查各自防的是什么（并发等待期间的重复请求）；返回时用 structuredClone 防止调用方改坏缓存
+      - type: llm-rubric
+        value: 讲清了 #completedResult 顺手清理过期条目、#remember 按容量淘汰最老条目这两段"顺手做的小事"各自的目的，没有跳过或含糊带过

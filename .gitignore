@@ -5,3 +5,10 @@ Thumbs.db
 
 # npx skills local state
 .skill-lock.json
+
+# 本地密钥与评测缓存，禁止提交
+.env
+prompt-evaluation/.env
+prompt-evaluation/.promptfoo/
+prompt-evaluation/results/
+__pycache__/

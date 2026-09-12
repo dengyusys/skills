@@ -1,0 +1,207 @@
+# 代码阅读指导 skill：项目级三维度泛化评测
+#
+# 维度：① 整个项目的设计 ② 整个项目架构 ③ 代码可读性评价
+# 目的：同一套 v1-v5 讲解提示词换任务类型后是否仍然"利于用户接受和理解"。
+# 材料：摘自本地 D:\ai-steward-a（只读引用，副本固化于此，无任何敏感信息）。
+#
+# 运行：npx promptfoo@latest eval -c promptfooconfig.project-reading.yaml --env-file .env
+
+description: 代码阅读指导 v1-v6 项目级三维度
+
+prompts:
+  - file://prompts/code-reading/v1.txt
+  - file://prompts/code-reading/v2.txt
+  - file://prompts/code-reading/v3.txt
+  - file://prompts/code-reading/v4.txt
+  - file://prompts/code-reading/v5.txt
+  - file://prompts/code-reading/v6.txt
+
+providers:
+  # Coding Plan key 走 Anthropic 兼容端点；GLM-5.3 为思考型模型，max_tokens 需给足
+  - id: anthropic:messages:glm-5.3-flash
+    label: glm-5.3-flash
+    config:
+      apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+      temperature: 0
+      max_tokens: 8000
+      # 关闭思考块：否则 thinking 文本会拼进输出，污染所有断言
+      thinking:
+        type: disabled
+
+# 裁判模型：glm-5.3（比被测的 flash 强一档）
+defaultTest:
+  options:
+    provider:
+      id: anthropic:messages:glm-5.3
+      config:
+        apiBaseUrl: https://open.bigmodel.cn/api/anthropic
+        temperature: 0
+        max_tokens: 4000
+        thinking:
+          type: disabled
+  assert:
+    - type: python
+      value: file://assertions/ascii_flow_only.py
+    - type: python
+      value: file://assertions/no_prose_wall.py
+
+tests:
+  # ===== 维度一：整个项目的设计 =====
+
+  - description: 项目设计（这个项目是干嘛的、为什么这么设计）
+    vars:
+      request: 我完全不了解这个项目，用大白话给我讲讲它是干什么的、整体是怎么设计的、为什么要这么设计。
+      code: |
+        项目名：ai-steward（私人日程 AI 助手）
+
+        一句话介绍：用自然语言记录作息、锻炼、三餐和习惯；AI 只生成受限的结构化提案，
+        用户核对差异并明确确认后，Gateway 才安全写入日程数据。
+
+        模块组成：
+        - apps/web：Vite + React + TypeScript 单页应用（月历 / 录入 / 记忆三个 Tab），只调用 Gateway API。
+        - apps/gateway：Node HTTP 服务，内含三个业务域：
+          - schedule：日程数据的读写、冲突检测与失败恢复
+          - proposals：AI 提案的解析、校验与确认流程
+          - memory：长期记忆（稳定偏好与约束），SQLite 存储
+        - apps/memory：SQLite + AI 长期记忆服务（独立辅助服务）。
+        - data/：本地 SQLite 数据文件（schedule.db、memory.db）。
+        - docs/：产品、架构、Spec、决策记录（ADR）、运维和进度文档。
+        - test/：跨包一致性与集成测试。
+
+        核心设计约束（摘自项目 README 与工作指南）：
+        - Gateway 是唯一在线日程读写入口；Web 和 AI 都不得直接读写日程数据库。
+        - AI 不读取文件、不接触路径、不执行工具，也不直接写入日程数据。
+        - 确认前不写入；提交时执行冲突检测、完整校验和失败恢复。
+        - 提案确认只能使用 URL 中的 proposal_id；客户端不得提交 operations 或文件路径。
+        - Memory 是独立辅助服务；不可用时 Gateway 日程核心流程继续工作。
+        - .ts 源码由 Node 22 直接运行（type stripping，无构建步骤）。
+
+        架构图（摘自 README）：
+        Web（React SPA） ──>
+                            ├─> Gateway ─> data/schedule/schedule.db
+                            │       │
+                            │       ├─> AI provider
+                            │       └─> Memory ─> data/memory/memory.db
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 先用一句话或日常类比让零基础读者明白这个项目给谁解决什么问题（事理先行），再展开讲模块划分；Gateway、提案、SPA 这类术语首次出现时有一句话解释
+      - type: llm-rubric
+        value: 讲清了"AI 只生成提案、用户确认后 Gateway 才写入"这条安全主线为什么必要（防止 AI 误写真实数据），以及"Memory 挂了核心流程也能用"这个设计取舍的好处
+      - type: llm-rubric
+        value: 模块职责用表格或列表组织，读者能把"模块名 → 负责什么"一一对上，没有大段文字堆砌
+
+  # ===== 维度二：整个项目的架构 =====
+
+  - description: 项目架构（组成部分、连接方式、数据流动）
+    vars:
+      request: 带我理解这个系统的架构：有哪些部分、怎么连接的、一次日程记录从输入到落库的完整数据流是什么样？
+      code: |
+        目录结构（节选）：
+        apps/
+        ├─ gateway/src/
+        │   ├─ domains/schedule/    # 日程域：写入队列、记录更新、校验、路由
+        │   ├─ domains/proposals/   # 提案域：解析、校验、存储、路由
+        │   └─ domains/memory/      # 记忆域：仓库、执行器、上下文组装
+        │   └─ infrastructure/ai/   # AI 调用封装
+        ├─ web/src/                 # React 单页应用（月历 / 录入 / 记忆三 Tab）
+        └─ memory/                  # 独立记忆服务
+        data/
+        ├─ schedule/schedule.db     # 日程 SQLite（唯一运行时日程数据源）
+        └─ memory/memory.db         # 记忆 SQLite
+        schemas/                    # 数据结构定义
+        test/                       # 跨包集成测试
+
+        模块连接关系（摘自项目文档）：
+        - Web（浏览器端 React 应用）只通过 HTTP 调用 Gateway 的 API，自己不碰任何数据库。
+        - Gateway 是唯一在线日程读写入口，内部按业务分为 schedule / proposals / memory 三个域。
+        - Gateway 调用外部 AI provider 生成结构化提案（AI 无文件、无路径、无工具权限）。
+        - Gateway 的记忆域进程内连接 Memory 服务读写 memory.db。
+        - 用户在 Web 上核对提案差异并确认后，Gateway 才执行写入：串行队列 + 事务 + 冲突检测。
+        - 每次写入带 requestId，Gateway 按 requestId 做进程内幂等去重。
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 用基础 ASCII 字符（+ - | > 等）画出了 Web / Gateway / AI / Memory / 两个 SQLite 之间的连接与数据流向，组件与材料一致，没有编造材料里不存在的组件
+      - type: llm-rubric
+        value: 完整走通一次数据流：用户自然语言输入 → AI 生成提案 → 用户核对确认 → Gateway 串行队列写入 schedule.db，每一步讲清"为什么要有这一步"，不跳步
+      - type: llm-rubric
+        value: 开篇一句话点明架构整体形态（例如"一个前端应用 + 一个网关服务 + 一个记忆服务"），之后按模块或按数据流组织，读者始终知道自己在地图的哪个位置
+
+  # ===== 维度三：代码可读性评价 =====
+
+  - description: 代码可读性评价（好在哪、对新手不友好在哪）
+    vars:
+      request: 从可读性角度评价下面这个文件：哪些地方对读者友好、哪些地方对新手不友好、可以怎么改进？
+      code: |
+        /**
+         * 记忆操作执行器：在同一事务中应用全部动作，并通过显式数据库依赖
+         * 保证测试可使用临时数据库且不触碰生产单例。
+         */
+
+        import { createMemoryRepository } from "./repository.ts";
+        import type { MemoryAction } from "./types.ts";
+        import type BetterSqlite3 from "better-sqlite3";
+
+        // SQLite 数据库实例类型（better-sqlite3，由记忆域直接持有）。
+        type Database = BetterSqlite3.Database;
+
+        export function applyMemoryActions({
+          db,
+          userId,
+          scope,
+          sourceMessageId,
+          actions,
+        }: {
+          db: Database;
+          userId: string;
+          scope: string;
+          sourceMessageId: string | null;
+          actions: MemoryAction[];
+        }): void {
+          if (!db) throw new TypeError("applyMemoryActions 需要 db 参数");
+          if (!Array.isArray(actions) || actions.length === 0) {
+            return;
+          }
+
+          const repository = createMemoryRepository(db);
+
+          db.exec("BEGIN IMMEDIATE");
+
+          try {
+            for (const action of actions) {
+              if (action.action === "upsert") {
+                repository.upsert({
+                  userId,
+                  scope,
+                  sourceMessageId,
+                  memoryKey: action.memoryKey,
+                  category: action.category ?? "",
+                  content: action.content ?? "",
+                  importance: action.importance ?? 1,
+                });
+              }
+
+              if (action.action === "remove") {
+                repository.remove({
+                  userId,
+                  scope,
+                  memoryKey: action.memoryKey,
+                });
+              }
+            }
+
+            db.exec("COMMIT");
+          } catch (error) {
+            db.exec("ROLLBACK");
+            throw error;
+          }
+        }
+      strategy: （首轮运行，暂无历史策略，按固定规则执行。）
+    assert:
+      - type: llm-rubric
+        value: 评价引用了文件里的具体证据（如文件头注释、参数校验的位置、事务三行的写法、action ?? 默认值等），而不是空泛地说"代码很整洁"
+      - type: llm-rubric
+        value: 分别指出对新手友好和不友好的地方各至少一处（例如友好：头注释说明意图、依赖注入便于测试；不友好：MemoryAction 类型在别处、upsert 字段较多没有分组说明），并给出具体可执行的改进建议
+      - type: llm-rubric
+        value: 评价本身先给总体结论，再用列表或表格分维度展开，零基础读者能看懂每条评价的理由
