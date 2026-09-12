@@ -1,0 +1,56 @@
+description: 闭包、异步回调与变量变化（讲清「变量本身 vs 当时的值」+ 克制不展开事件循环）
+vars:
+  request: 我没有 JavaScript 基础，帮我把这段内容讲懂。
+  doc: |
+    ## 7.4 请求状态回调
+
+    ```js
+    let status = "loading";
+
+    function createReporter() {
+      return function report() {
+        console.log("status:", status);
+      };
+    }
+
+    const report = createReporter();
+
+    status = "success";
+
+    setTimeout(report, 0);
+    ```
+
+    这里 `report` 不保存 `status = "loading"` 这一刻的值，而是保留了对 `status` 的访问能力。
+
+    因此定时器真正执行 `report()` 时，打印的是 `status: success`。
+
+    如果改成：
+
+    ```js
+    function createReporter(status) {
+      return function report() {
+        console.log("status:", status);
+      };
+    }
+
+    let status = "loading";
+    const report = createReporter(status);
+
+    status = "success";
+
+    setTimeout(report, 0);
+    ```
+
+    这一次 `report` 使用的是 `createReporter` 调用时传入的那个参数值，因此最后打印的是 `status: loading`。
+assert:
+  - type: llm-rubric
+    value: |
+      你是阅卷员。仅依据输出文本逐项核对，任何一项不达标即失败。
+      理解题：
+      1. 第一段代码最后打印什么、为什么？标准：status: success；report 保留的是对外部 status 变量本身的访问能力，不是复制当时的值，回调真正执行时读到的是最新值。
+      2. 第二段为什么打印 loading？标准：createReporter(status) 调用时把当时的值传给了参数，函数内部保存的是这个参数的值；外层变量后来改成 success 不影响它。
+      3. setTimeout(report, 0) 意味着什么、为什么赋值先于打印发生？标准：它只是把 report 安排到稍后执行（注册回调和真正调用是两个时间点），并不立即调用；所以 status = "success" 先执行。
+      讲法判定：
+      4. 必须明确区分「变量本身」和「变量当时的值」，两段差异要讲出原因；只报输出结果、或笼统说「闭包记住了变量」而没有说清记住的是什么，即失败。
+      5. 术语（闭包、词法环境等）可以使用，但不带大白话解释的直接使用即失败。
+      6. 过度展开检查：出现事件循环、宏任务、微任务、调用栈等本题用不到的大段展开即失败。

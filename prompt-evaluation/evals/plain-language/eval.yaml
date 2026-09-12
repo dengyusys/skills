@@ -1,0 +1,22 @@
+name: plain-language
+title: 去 AI 味·说人话（文档改写提示词）
+description: 同一批固化自 ui-library 的文档摘录在 3 个改写提示词下的对比；机械断言抓标记密度与事实保全，裁判抓可读性增益与有无改出新 AI 味
+labels:
+  - v1 一句话指令
+  - v2 具体禁令
+  - v3 禁令+结构+自查
+  - v4 合一分支版
+  - v5 版式呼吸
+  - v6 合一+版式
+  - v7 完整分支修正版
+  - v8 极简版
+  - v9 用户原则版
+  - v10 用户终版
+  - v11 用户终版二
+defaultAsserts: |
+  - type: python
+    value: file://../../core/assertions/code_facts_preserved.py
+  - type: python
+    value: file://../../core/assertions/no_prose_wall.py
+  - type: llm-rubric
+    value: 改坏检测——对照原文逐段核对，改写不得引入任何错误：因果颠倒、条件丢失、范围夸大或缩小、把原文的推测写成事实、无中生有的建议或结论、自我说明或总结段（如「主要改动：」「以下是改写后的版本」）。发现任何一处即失败；仅在表达方式上的差异不算。

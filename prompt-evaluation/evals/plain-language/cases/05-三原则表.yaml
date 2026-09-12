@@ -1,0 +1,22 @@
+description: Apple 三原则落地表（表格单元格过载/术语无解释/链接与代码记号保全）
+vars:
+  request: 这段文档读起来太费劲了，帮我改成说人话的版本，顺一遍。内容别丢。
+  doc: |
+    ## 6. 产品级美感 · Apple 三原则的落地
+
+    > 依据 [Apple HIG 设计原则](https://developer.apple.com/design/human-interface-guidelines/design-principles)：**Clarity（清晰）/ Deference（顺应内容）/ Depth（层次）**。目标是"从里到外"的一致质感——每个状态都被设计过，每个表面都有物质感。
+
+    | 原则 | 本库落地 |
+    |------|------|
+    | Clarity | 侧栏 macOS 式选中指示条（3px 圆角 accent 条）；衬线标题统一 `-0.3px` 光学字距；等宽 + tabular-nums 数据 |
+    | Deference | 顶部主色 5% 环境光（`body::before` radial，fixed 不拦截事件），页面不是死平的底；**阴影只属于浮层**（命令面板/toast 双层阴影），内容卡片保持 hairline 平面不漂浮 |
+    | Depth | 阴影双层化：`0 1px 2px`（接触影）+ `0 16px 40px`（环境影），表面"浮"而非"贴"；主按钮 `inset 0 1px 0` 受光高光 + 主色接触影；按压 `scale(0.96)` + 弹簧回弹 |
+    | 物理感 | `--ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1)` 轻过冲弹簧——只给"有质量"的动效用（按压、toast 入场），位移动效仍用 ease-out-expo（弹簧不滥用） |
+assert:
+  - type: llm-rubric
+    value: |
+      你是阅卷员。以下问题必须能只从改写后的文本中读到明确依据；依据与标准答案不符算失败。逐问核对：
+      1. Clarity、Deference、Depth 三个原则各自是什么意思？标准：改写稿必须用自己的话把三者含义讲清（清晰、界面顺应内容而不是抢戏、层次），只有名词直译不算讲清。
+      2. 阴影的分工规则？标准：阴影只属于浮层（命令面板、toast 用双层阴影），内容卡片保持平面不漂浮。
+      3. 两组阴影数值各自的用途？标准：0 1px 2px 是接触影、0 16px 40px 是环境影。
+      4. 弹簧曲线（--ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1)）给什么用、不给什么用？标准：只给有质量的动作（按压、toast 入场）；位移动效用 ease-out-expo。

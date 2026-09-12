@@ -1,0 +1,13 @@
+description: 克制解释（一行代码应当一句话讲清，不为解释而解释）
+vars:
+  request: 帮我看看这行代码是什么意思。
+  doc: |
+    `const name = user?.profile?.name ?? "匿名用户";`
+assert:
+  - type: python
+    value: file://../../core/assertions/short_answer.py
+  - type: llm-rubric
+    value: |
+      你是阅卷员。本题考的是克制：一行代码的问题，答案就应该是一句话（长度与结构已由机械断言把关，你只查含义与展开）。
+      1. 含义正确且完整：读取用户姓名时，如果 user 或 profile 不存在，或者 name 是 null 或 undefined，就使用「匿名用户」。
+      2. 展开检查：出现以下任一即失败：给可选链/空值合并下定义或讲命名由来、讲浏览器兼容性、与 || 运算符对比、「没有 ?. 会报什么错」之类的反例展开。
