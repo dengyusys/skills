@@ -52,10 +52,12 @@ npm run eval -- my-skill
 
 | 测评 | 内容 | 当前最优 |
 |------|------|---------|
-| code-reading | 代码阅读指导提示词 v1-v6（文件级 6 案例） | v6 |
+| code-reading | 代码阅读指导提示词 v1-v9e（文件级 6 案例；表达卫生预算已降为观察项） | v7（用户终版二另见 plain-language） |
 | project-reading | 同套提示词的项目级泛化（设计/架构/可读性 3 维度） | v6 |
 | code-style | 仓库 code-style 技能三变体测试（6 案例） | 见该测评 README |
 | commit-message | write-git-commit-message 提示词（入门示例） | v1/v2 持平 |
+| document-management | 项目文档管理技能（12 案例 × 6 变体） | 大白话全家桶（已落地） |
+| plain-language | 去 AI 味·说人话提示词（八题理解考卷：只测内容不测形式；含用户提供的 07/08 两题） | 用户终版二（PROMPT-USER-FINAL.txt），详见该测评 README |
 
 各测评的详细结论、失败模式与迭代记录见 `evals/<名字>/README.md`。
 
