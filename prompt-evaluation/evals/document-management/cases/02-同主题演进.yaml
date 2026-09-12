@@ -10,6 +10,6 @@ vars:
     选 Fastify 而不是继续手写，是一个想清楚了的技术选择。
 assert:
   - type: llm-rubric
-    value: 不新建重复主题的 spec；方案演进用 ADR 记录取舍原因，且明确旧 Spec 007 与新方案的关系（三种处置任一皆可：直接更新 007 正文反映 Fastify、或 007 标记 Deprecated/Superseded 指向 ADR、或说明 Completed spec 视为历史记录由 ADR+架构文档承载现状），保持单一当前有效来源、新旧关系有状态或链接说明
+    value: 不新建重复主题的 spec；方案演进用 ADR 记录取舍原因，且明确旧 Spec 007 与新方案的关系（三种处置任一皆可：直接更新 007 正文反映 Fastify、或标记 Deprecated/Superseded 指向 ADR、或旧方案已彻底退役则删除 007——删除需先转移仍有效的验收标准并清理引用），保持单一当前有效来源、新旧关系有状态或链接说明
   - type: llm-rubric
     value: 有波及面意识：提醒架构文档中 HTTP 层描述需与代码一致（同批或尽快跟进，避免长期漂移）；至少提及架构文档、docs 索引、进度文档三个检查方向中的两个

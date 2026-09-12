@@ -30,6 +30,12 @@ skills/
 - 项目专属技能不入库（如 ai-steward-a 的 schedule-calendar）
 - 技能应泛化为"个人通用"定位，避免绑定某个具体仓库结构
 
+## 实验与正式区工作流
+
+- 提示词与技能的迭代实验在 `prompt-evaluation/`（评测区）进行：规则修改先做成变体提示词跑验证，候选文本以提案（PROPOSAL.md）形式记录
+- 修改 `skills/` 前必须先请用户审阅候选文本，经确认后才落地；不得在评测后直接修改技能本体
+- `git commit` 仅在用户明确要求时执行，不得自行提交
+
 ## 修改技能
 
 1. 只编辑 `skills/<name>/` 下的文件，不触碰项目侧副本
@@ -50,5 +56,5 @@ skills/
 
 ## 发布与同步
 
-- 编辑完成 → `git add . && git commit -m "..."` → `git push`
+- 编辑完成并经用户确认提交后，执行 `git add . && git commit -m "..."` → `git push`
 - 推送后，各项目执行 `npx skills update` 生效（本仓库不做项目侧操作）
