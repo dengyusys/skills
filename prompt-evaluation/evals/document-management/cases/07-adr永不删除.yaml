@@ -1,0 +1,13 @@
+description: ADR 过时被要求删除（永不删规则）
+vars:
+  request: ADR 009 的方案早不用了，把它删了吧，反正 Git 里也找得回来。
+  context: |
+    docs/decisions/009-http-framework-choice.md —— 状态 Accepted，记录当年 HTTP 层
+    选择手写管道的取舍。如今代码早已整体换成现成框架，接棒方案记录在
+    docs/decisions/014-http-framework-migration.md（状态 Accepted）。
+    009 目前没有任何状态更新，仍标着 Accepted。
+assert:
+  - type: llm-rubric
+    value: 拒绝删除 ADR：明确决策记录永不删除，正确处置是把 009 标为 Superseded 并链接接棒的 014（014 侧也应有反向链接）
+  - type: llm-rubric
+    value: 讲得出不删的理由（决策记录的价值是追溯"当时为什么这么选、后来为什么换"，删了就断了决策链），并顺带指出 009 还标着 Accepted 属于状态过期需要更新

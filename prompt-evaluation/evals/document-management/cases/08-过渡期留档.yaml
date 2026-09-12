@@ -1,0 +1,12 @@
+description: 方案替换但旧方案还在跑（过渡期留档）
+vars:
+  request: 新的 ADR 我已经写好了，旧的那份 spec 文档上怎么处理？
+  context: |
+    docs/specs/005-data-export.md —— 状态 Completed，记录当前数据导出服务的完整方案，
+    该服务仍在生产环境运行。替换方案刚上线灰度（20% 流量），回滚窗口至少保留一个月，
+    存量数据的迁移校验还没完成。接棒的决策记录 docs/decisions/016 已写好（Accepted）。
+assert:
+  - type: llm-rubric
+    value: 结论是旧 Spec 此刻留着，标好状态（Superseded 或 Deprecated 均可）并链接新 ADR——明确"现在不删"，等旧方案彻底下线、迁移收尾后再删；不是立即删除
+  - type: llm-rubric
+    value: 判定依据落在"旧方案还在跑（灰度、回滚窗口、迁移未完）"，且把下线后的删除动作（搬验收标准、清引用、编号不复用）交代为后续待办而不是现在执行

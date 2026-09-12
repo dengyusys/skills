@@ -3,6 +3,9 @@ title: document-management 技能测试（三变体）
 description: 仓库 skills/document-management 技能的有效性测试：无技能 / 仅主文件 / 主文件+细则 三变体，六案例全部取材于 ai-steward-a 的 docs 真实结构与变更记录（只读摘录）
 labels:
   - 无技能
-  - 仅主文件
-  - 主文件+细则
+  - 仅主文件·原版
+  - 仅主文件·大白话
+  - 主文件+细则·原版
+  - 主文件+细则·大白话
+  - 主文件原版+细则大白话
 defaultAsserts: |

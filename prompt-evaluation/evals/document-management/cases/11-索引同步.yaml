@@ -1,0 +1,14 @@
+description: 索引与现实同步（被替代 spec 在索引中的呈现）
+vars:
+  request: 文档索引这块要不要动？
+  context: |
+    docs/README.md 的索引表里列着：
+    "| Spec 005 数据源迁移到 JSON | Completed | 数据格式迁移与回滚方案 |"
+    实际情况：当前运行时早已换成 SQLite 方案（Spec 009 承载，已实施），
+    Spec 005 描述的 JSON 方案整体不再是现行方案。但索引里看不出任何
+    "已被替代"的提示——新读者顺着索引会以为 JSON 还是当前数据源。
+assert:
+  - type: llm-rubric
+    value: 指出索引必须同步：被替代的 spec 在索引里要能看出"已被替代"（描述中注明"已由 Spec 009 的方案替代"或标注状态），不能让读者顺着索引误信旧方案
+  - type: llm-rubric
+    value: 有入口意识：索引是读者的入口，除索引外还要核对 spec 正文的状态标记、以及引用旧方案的运维文档（如部署手册里的 JSON 服务器描述）是否一并说清新旧关系

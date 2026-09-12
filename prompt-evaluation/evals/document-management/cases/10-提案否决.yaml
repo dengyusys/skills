@@ -1,0 +1,15 @@
+description: 提案被否决（Rejected ADR 的处置）
+vars:
+  request: 这个被否掉的决策记录怎么处理？删了省事，还是留着？
+  context: |
+    docs/decisions/003-split-http-layer.md —— 状态 Proposed，两个月前提出"把 HTTP 层拆成
+    router/controller/middleware 三层"的提案。经过分析决定不做了，理由有三：
+    1. 各文件都没超过团队定下的 400 行拆分阈值，拆了没有实际收益；
+    2. 三层结构和现在的域组织原则冲突，会叠出两套分类体系；
+    3. 提案真正想解决的依赖方向问题，已经用"文件移动 + 端口定义"的更小代价
+       在别处解决了（记录在另一篇 ADR 里）。
+assert:
+  - type: llm-rubric
+    value: 明确不删除：决策记录永不删，标为 Rejected，写清拒绝日期和拒绝理由，并说明"原本要解决的问题实际由什么方式解决了"（指向真正解决问题的那条决策）
+  - type: llm-rubric
+    value: 讲得出保留的价值（可追溯：半年后有人再提同样的提案时，能看到当时为什么否、真问题在哪解决的），而不是只说"按规范保留"
