@@ -8,8 +8,18 @@ labels:
   - v4 元任务式
   - v5 合并版
   - v6 最终版
+  - v7 表达卫生
+  - v8 合一分支版
+  - v9 合一完整分支
+  - v9b 极简版
+  - v9c 用户原则版
+  - v9d 用户终版
+  - v9e 用户终版二
 defaultAsserts: |
   - type: python
     value: file://../../core/assertions/ascii_flow_only.py
   - type: python
     value: file://../../core/assertions/no_prose_wall.py
+# 表达卫生预算降为观察项（用户裁定不判死；恢复时取消下两行注释）
+#  - type: python
+#    value: file://../../core/assertions/prose_marker_budget.py
